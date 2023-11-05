@@ -38,12 +38,20 @@ async function run() {
       const foods = await cursor.toArray();
       res.send(foods)
     })
+    app.post('/available-foods',async(req,res)=>{
+      const food = req.body;
+      console.log(food);
+      const result = await foodsCollection.insertOne(food);
+      res.send(result)
+    })
 
     app.get('/available-foods/:id',async(req,res)=>{
-      const query = {_id: new ObjectId(req.params.id)}
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
       const food = await foodsCollection.findOne(query);
       res.send(food)
     })
+
     
     client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
