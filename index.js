@@ -27,10 +27,17 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
+    const foodsCollection = client.db('nourishNetDB').collection('foodsCollection')
 
     app.get('/', (req, res) => {
         res.send('Hello World!')
       })
+
+    app.get('/available-foods',async(req,res)=>{
+      const cursor = foodsCollection.find();
+      const foods = await cursor.toArray();
+      res.send(foods)
+    })
     
     client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
