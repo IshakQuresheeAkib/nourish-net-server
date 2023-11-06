@@ -28,6 +28,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const foodsCollection = client.db('nourishNetDB').collection('foodsCollection')
+    const foodRequestCollection = client.db('nourishNetDB').collection('foodRequestCollection')
 
     app.get('/', (req, res) => {
         res.send('Hello World!')
@@ -84,6 +85,14 @@ async function run() {
       }
       const result = await foodsCollection.find(query).toArray();
       res.send(result);
+    })
+
+
+    // api for food request collection
+    app.post('/requested-food',async(req,res)=>{
+      const food = req.body;
+      const result = await foodRequestCollection.insertOne(food)
+      res.send(result)
     })
 
     
