@@ -46,23 +46,20 @@ async function run() {
       res.send(result)
     })
 
-  //   app.put('/available-foods',async(req,res)=>{
-  //     const food = req.body;
-  //     const filter = {_id: new ObjectId(food._id)}
-  //     const options = {upsert:true}
-  //     const updatedFood = {
-  //         $set:{
-  //             name : product.name ,
-  //             brandName : product.brandName,
-  //             image : product.image ,
-  //             type : product.type ,
-  //             price : product.price ,
-  //             rating : product.rating ,
-  //         }
-  //     }
-  //     const result = await foodsCollection.updateOne(filter,updatedFood,options)
-  //     res.send(result)
-  // })
+    app.put('/available-foods',async(req,res)=>{
+      const food = req.body;
+      const { foodName,foodImage,foodQuantity,donatorEmail,donatorImage,donatorName,pickupLocation,expiredDateTime,additionalNotes,foodStatus } = food
+      const filter = {_id: new ObjectId(food._id)}
+      console.log(filter);
+      const options = {upsert:true}
+      const updatedFood = {
+          $set:{
+            foodName,foodImage,foodQuantity,donatorEmail,donatorImage,donatorName,pickupLocation,expiredDateTime,additionalNotes,foodStatus
+          }
+      }
+      const result = await foodsCollection.updateOne(filter,updatedFood,options)
+      res.send(result)
+  })
 
     app.get('/available-foods/:id',async(req,res)=>{
       const id = req.params.id
@@ -71,6 +68,12 @@ async function run() {
       res.send(food)
     })
 
+    app.delete('/available-foods/:id',async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await foodsCollection.deleteOne(query);
+      res.send(result)
+    })
 
     // api for manage-my-foods section
     app.get('/manage-my-foods',async(req,res)=>{
