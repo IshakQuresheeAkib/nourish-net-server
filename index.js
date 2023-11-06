@@ -1,8 +1,8 @@
 const express = require('express')
 const cors = require('cors')
+require('dotenv').config(); 
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
-require('dotenv').config(); 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
@@ -33,6 +33,7 @@ async function run() {
         res.send('Hello World!')
       })
 
+    // api for available foods section
     app.get('/available-foods',async(req,res)=>{
       const cursor = foodsCollection.find();
       const foods = await cursor.toArray();
@@ -52,6 +53,17 @@ async function run() {
       res.send(food)
     })
 
+
+    // api for manage-my-foods section
+    app.get('/manage-my-foods',async(req,res)=>{
+      const userEmail = req.query?.email
+      let query;
+      if (userEmail) {
+        query = {email: userEmail}
+      }
+      const result = await foodsCollection.find(query).toArray();
+      res.send(result);
+    })
     
     client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
