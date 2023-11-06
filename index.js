@@ -46,6 +46,24 @@ async function run() {
       res.send(result)
     })
 
+  //   app.put('/available-foods',async(req,res)=>{
+  //     const food = req.body;
+  //     const filter = {_id: new ObjectId(food._id)}
+  //     const options = {upsert:true}
+  //     const updatedFood = {
+  //         $set:{
+  //             name : product.name ,
+  //             brandName : product.brandName,
+  //             image : product.image ,
+  //             type : product.type ,
+  //             price : product.price ,
+  //             rating : product.rating ,
+  //         }
+  //     }
+  //     const result = await foodsCollection.updateOne(filter,updatedFood,options)
+  //     res.send(result)
+  // })
+
     app.get('/available-foods/:id',async(req,res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
@@ -59,11 +77,12 @@ async function run() {
       const userEmail = req.query?.email
       let query;
       if (userEmail) {
-        query = {email: userEmail}
+        query = {donatorEmail: userEmail}
       }
       const result = await foodsCollection.find(query).toArray();
       res.send(result);
     })
+
     
     client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
