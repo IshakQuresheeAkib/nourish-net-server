@@ -11,7 +11,7 @@ const app = express()
  
 
 app.use(cors({
-  origin:['http://localhost:5173','http://localhost:5174'],
+  origin:['http://localhost:5173','http://localhost:5174','https://nourish-net.web.app','https://nourish-net.firebaseapp.com'],
   credentials:true
 }))
 app.use(express.json())
@@ -30,7 +30,7 @@ const client = new MongoClient(uri, {
 // middlewares
 const verify = async (req,res,next)=>{
   const token = req?.cookies?.token
-  // console.log(token)
+  console.log(token)
   if (!token) {
       return res.status(401).send({error:'Forbidden access',status:401})
   }
@@ -61,16 +61,15 @@ async function run() {
         const token = jwt.sign(body,process.env.SECRET_KEY,{expiresIn:'1h'})
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', 
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             
+            secure: true, 
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',           
         })               
         .send({message:'SUCCESS',token})
     })
 
     app.post('/logout',async(req,res)=>{
       const user = req.body;
-      console.log(user);
 
           res.clearCookie(
           "token",
@@ -85,13 +84,37 @@ async function run() {
 
     // api for available foods section
     app.get('/available-foods',async(req,res)=>{
+      const isSort = req?.query?.isSort
+      const search = req.query?.search
+     
+      if (search.length > 0) {
+        const singleFood = await foodsCollection.findOne({foodName: search})
+        if (singleFood) {
+          const cursor = await foodsCollection.find({foodName: search}).toArray();
+          return res.send(cursor)
+        }{
+          return res.send({message:'ERROR'})
+        }
+      }
+
+      if (isSort === "true" ) {
+        const foods = await foodsCollection.find({ foodQuantity: { $gt: 0 } }).sort({expiredDateTime: 1 }).toArray();
+        return res.send(foods)
+      }
+      
       const cursor = foodsCollection.find({ foodQuantity: { $gt: 0 } });
       const foods = await cursor.toArray();
       res.send(foods)
     })
+
+    app.get('/featured-foods',async(req,res)=>{
+      const cursor = foodsCollection.find({ foodQuantity: { $gt: 0 } }).sort({foodQuantity: -1 }).limit(6);
+      const foods = await cursor.toArray();
+      res.send(foods)
+    })
+
     app.post('/available-foods',async(req,res)=>{
       const food = req.body;
-      console.log(food);
       const result = await foodsCollection.insertOne(food);
       res.send(result)
     })
@@ -112,11 +135,6 @@ async function run() {
     app.patch('/available-foods',async(req,res)=>{
       const {id,foodQuantity} = req.body;
       const newQuantity = foodQuantity - 1
-      // if(!newQuantity){
-      //   const query = {_id: new ObjectId(id)}
-      //   const result = await foodsCollection.deleteOne(query);
-      //   return res.send(result);        
-      // }
       const filter = {_id: new ObjectId(id)}
       const options = {upsert:true}
       const updatedFood = {
@@ -130,8 +148,8 @@ async function run() {
 
 
 
-    app.get('/available-foods/:id',async(req,res)=>{
-      const id = req.params.id
+    app.get('/available-foods/:id',async(req,res)=>{   
+      const id = req.params?.id
       const query = {_id: new ObjectId(id)}
       const food = await foodsCollection.findOne(query);
       res.send(food)
@@ -139,7 +157,6 @@ async function run() {
 
     app.delete('/available-foods/:name',async(req,res)=>{
       const name = req.params?.name;
-      console.log(name);
       let query;
       if (name) {
         query = {foodName: name}
@@ -149,9 +166,12 @@ async function run() {
     })
 
     // api for manage-my-foods section
-    app.get('/manage-my-foods',async(req,res)=>{
+    app.get('/manage-my-foods',verify,async(req,res)=>{
       const userEmail = req.query?.email
       let query;
+      if (req.decode.email !== userEmail) {
+        return res.status(403).send({error:'wrong email',status:401}) 
+    }
       if (userEmail) {
         query = {donatorEmail: userEmail}
       }
@@ -176,11 +196,16 @@ async function run() {
       const result = await foodRequestCollection.find(query).toArray();
       res.send(result)
     })
-    app.get('/requested-food',async(req,res)=>{
-      const email = req.query?.email;
+    app.get('/requested-food/:email',verify,async(req,res)=>{
+      const email = req.params?.email;
+      console.log(email,req.params);
+      if (req.decode.email !== email) {
+        return res.status(403).send({error:'wrong email',status:401}) 
+      }
       let query;
       if (email) {
-        query = {email: email}
+        query = {userEmail: email}
+        console.log('hello',query);
       }
       const result = await foodRequestCollection.find(query).toArray();
       res.send(result)
@@ -188,7 +213,6 @@ async function run() {
 
     app.patch('/requested-food',async(req,res)=>{
       const {id,foodStatus} = req.body;
-      console.log(id,foodStatus);
       const filter = {_id: new ObjectId(id)}
       const options = {upsert:true}
       const updatedFood = {
