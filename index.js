@@ -86,7 +86,7 @@ async function run() {
     app.get('/available-foods',async(req,res)=>{
       const isSort = req?.query?.isSort
       const search = req.query?.search
-     
+
       if (search.length > 0) {
         const singleFood = await foodsCollection.findOne({foodName: search})
         if (singleFood) {
